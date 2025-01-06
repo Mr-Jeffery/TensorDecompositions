@@ -17,10 +17,16 @@ The idea is to express a tensor as a sum of rank-one tensors, which are outer pr
 
 This demo uses TensorLy's parafac function rather than my own implementation. 
 Before running the script, please ensure you have TensorLy installed in your environment.
+
+Three unit tests demonstrating different use cases:
+    work_example: A binary tensor (matrix, 2nd-order)
+    unit_test_1: Random tensor (4th-order)
+    unit_test_2: Random tensor (3rd-order)
 '''
 
 # A work example from tensorly
 def work_example():
+    print("Work example starts!")
     # The input tensor (here the tensor is a two-dimensional matrix) 
     tensor = tl.tensor([[ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.],
                         [ 0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.],
@@ -48,7 +54,7 @@ def work_example():
     # Evaluate the reconstruction error 
     error = tl.norm(recon_tensor - tensor) / tl.norm(tensor) 
     print(f"Reconstruction error = {error}")
-    
+    print("Work example ends!")
     return
 
 def unit_test_1():
