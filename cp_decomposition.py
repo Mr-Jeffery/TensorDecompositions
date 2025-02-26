@@ -17,11 +17,10 @@ The idea is to express a tensor as a sum of rank-one tensors, which are outer pr
 
 This demo uses TensorLy's parafac function rather than my own implementation. 
 Before running the script, please ensure you have TensorLy installed in your environment.
-
 Three unit tests demonstrating different use cases:
     work_example: A binary tensor (matrix, 2nd-order)
-    unit_test_1: Random tensor (4th-order)
-    unit_test_2: Random tensor (3rd-order)
+    unit_test_1: Random tensor (3rd-order)
+    unit_test_2: Random tensor (4th-order)
 '''
 
 # A work example from tensorly
