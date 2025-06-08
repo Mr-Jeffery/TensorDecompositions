@@ -24,7 +24,7 @@ Three unit tests demonstrating different use cases:
 '''
 
 # A work example from tensorly
-def work_example():
+def work_example() -> None:
     print("Work example starts!")
     # The input tensor (here the tensor is a two-dimensional matrix) 
     tensor = tl.tensor([[ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.],
@@ -56,15 +56,17 @@ def work_example():
     print("Work example ends!")
     return
 
-def unit_test_1():
-    print("Unit test 1 starts!")
+def cp_unit_test(
+    shape: list[int], 
+    seed_value : int, 
+    rank: int
+)-> None:
+    print(f"CP decomposition starts with input:")
+    print(f"Shape = {shape}, Seed value = {seed_value}, Rank = {rank}")
     start_t = tm.time()
-    shape = [20, 10, 30]  # Tensor shape n1 * n2 * n3
-    seed(20)  # Random seed
-    tensor = rand(shape[0], shape[1], shape[2])
+    seed(seed_value)  # Set random seed
+    tensor = rand(*shape)
     
-    # CP decomposition. Rank = 200 (up to your choice)  
-    rank = 200
     cp_result = parafac(tensor, rank)
     
     # Reconstruct CP factor to tensor
@@ -74,36 +76,27 @@ def unit_test_1():
     error = tl.norm(recon_tensor - tensor) / tl.norm(tensor) 
     
     end_t = tm.time()
-    print(f"Unit test 1 ends! It took {end_t - start_t} seconds")
+    print(f"CP unit test ends! It took {end_t - start_t} seconds")
     print(f"number of factors (matrices) = {len(cp_result.factors)}")
     print(f"Shape of factors: {[f.shape for f in cp_result.factors]}")
     print(f"Reconstruction error = {error}")
     return
 
-def unit_test_2():
-    print("Unit test 2 starts!")
-    start_t = tm.time()
-    shape = [20, 30, 20, 10]  # Tensor shape n1 * n2 * n3 * n4
-    seed(10)  # Random seed
-    tensor = rand(shape[0], shape[1], shape[2])
-      
-    rank = 300
-    cp_result = parafac(tensor, rank)
-    
-    # Reconstruct CP factor to tensor
-    recon_tensor = tl.cp_to_tensor(cp_result)
-
-    # Evaluate the reconstruction error 
-    error = tl.norm(recon_tensor - tensor) / tl.norm(tensor) 
-    
-    end_t = tm.time()
-    print(f"Unit test 2 ends! It took {end_t - start_t} seconds")
-    print(f"number of factors (matrices) = {len(cp_result.factors)}")
-    print(f"Shape of factors: {[f.shape for f in cp_result.factors]}")
-    print(f"Reconstruction error = {error}")
-    
-    return
 
 work_example()
-unit_test_1()
-unit_test_2()
+
+# Example usage:
+print("Unit test 1 starts!")
+cp_unit_test(
+    shape=[20, 10, 30], 
+    seed_value=20, 
+    rank=200
+)
+
+print("Unit test 2 starts!")
+cp_unit_test(
+    shape=[20, 30, 20, 10], 
+    seed_value=10, 
+    rank=300
+)
+

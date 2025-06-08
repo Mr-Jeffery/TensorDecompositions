@@ -3,9 +3,10 @@
 This repository contains implementations of three fundamental tensor decomposition methods: Canonical Polyadic (CP), Tucker, and Tensor Train (TT) decompositions. Each method provides a different way to decompose high-dimensional tensors into more manageable components.
 
 ## Python Package Requirements
-- numpy
-- scipy
-- tensorly
+```bash
+python install -r requirements.txt
+```
+verified works with `python==3.13.4`, `scipy==1.15.3`, `tensorly==0.9.0`, `numpy==2.3.0`
 
 ## Implemented Methods
 

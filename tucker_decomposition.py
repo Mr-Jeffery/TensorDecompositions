@@ -6,7 +6,7 @@ from numpy.random import rand
 from numpy.random import seed
 from scipy.linalg import svd
 from tensorly.random import random_tucker
-from tensorly.tenalg import mode_dot
+from tensorly.tenalg import mode_dot # type: ignore
 from tensorly.tucker_tensor import tucker_to_tensor
 
 '''
@@ -27,13 +27,17 @@ Three unit tests demonstrating different use cases:
 '''
 
 # Evaluate the reconstruction error (relative error) of Tucker decomposition
-def recon_error_eval(core: np.ndarray, factor: list[np.array], tensor: np.array) -> float:
+def recon_error_eval(core: np.ndarray, factor: list[np.ndarray], tensor: np.ndarray) -> float:
     recon_tensor = tucker_to_tensor((core, factor))
     rel_error = tl.norm(recon_tensor - tensor) / tl.norm(tensor)
     return rel_error
 
 # Tucker decomposition (High-order SVD)
-def tucker_decomposition(tensor: np.ndarray, rank: list[float], cutoff: float) -> np.ndarray:
+def tucker_decomposition(
+    tensor: np.ndarray, 
+    rank: list[int], 
+    cutoff: float
+) -> tuple[np.ndarray, list[np.ndarray], list[int]]:
     shape = tensor.shape  # Tensor shape [n1, n2, ..., nd]
     order = len(shape)    # order d
     
@@ -66,76 +70,72 @@ def tucker_decomposition(tensor: np.ndarray, rank: list[float], cutoff: float) -
 
     return core, factor, output_rank
 
-def unit_test_1():
-    # Test of a synthetic tucker tensor
-    # Test synthetic tensor settings
-    print("Unit test 1 starts!")
+def tucker_unit_test(
+    shape: list[int],
+    rank: list[int] | None,
+    input_rank: list[int],
+    cutoff: float,
+    seed_value: int = 0,
+    random_tensor: bool = False
+) -> None:
+    """
+    Generalized unit test for Tucker decomposition.
+
+    Args:
+        shape: Shape of the tensor.
+        rank: Tucker rank for generating synthetic tensor.
+        input_rank: Input rank for decomposition.
+        cutoff: Singular value cutoff.
+        random_state: Random seed.
+        random_tensor: If True, generate a random tensor instead of a synthetic Tucker tensor.
+    """
+    print("Tucker unit test starts with input:")
+    print(f"Shape = {shape}, Rank = {rank}, Input rank = {input_rank}, Cutoff = {cutoff}, Seed value = {seed_value}, Random tensor = {random_tensor}")
     start_t = tm.time()
-    shape = [20, 30, 20]  # Tensor shape n1 * n2 * n3
-    rank = [15, 30, 18]   # Tucker rank 
-    random_state = 10  # Random seed
-    tucker_factor = random_tucker(shape, rank, random_state=random_state)
-    tensor = tucker_to_tensor(tucker_factor)
-    
-    # Tucker decomposition
-    input_rank = [20, 40, 20]
-    cutoff = 1e-10
+
+    if random_tensor:
+        if seed_value is not None:
+            seed(seed_value)
+        tensor = rand(*shape)
+    else:
+        tucker_factor = random_tucker(shape, rank, random_state=seed_value)
+        tensor = tucker_to_tensor(tucker_factor)
+
     core, factor, output_rank = tucker_decomposition(tensor, input_rank, cutoff)
     recon_error = recon_error_eval(core, factor, tensor)
-    
-    # Result display
+
     end_t = tm.time()
-    print(f"Unit test 1 ends! It took {end_t - start_t} seconds")
+    print(f"Tucker unit test ends! It took {end_t - start_t} seconds")
     print(f"Tensor shape = {shape},\nTucker factor rank = {output_rank},")
     print(f"Reconstruction error = {recon_error}\n")
     return
 
-def unit_test_2():
-    # Test of a synthetic tucker tensor
-    # Test synthetic tensor settings
-    print("Unit test 2 starts!")
-    start_t = tm.time()
-    shape = [20, 50, 10, 30] # Tensor shape n1 * n2 * n3 * n4
-    rank = [15, 30, 7, 25]   # Tucker rank 
-    random_state = 20  # Random seed
-    tucker_factor = random_tucker(shape, rank, random_state=random_state)
-    tensor = tucker_to_tensor(tucker_factor)
-    
-    # Tucker decomposition
-    input_rank = [50, 50, 50, 50]
-    cutoff = 1e-10
-    core, factor, output_rank = tucker_decomposition(tensor, input_rank, cutoff)
-    recon_error = recon_error_eval(core, factor, tensor)
-    
-    # Result display
-    end_t = tm.time()
-    print(f"Unit test 2 ends! It took {end_t - start_t} seconds")
-    print(f"Tensor shape = {shape},\nTucker factor rank = {output_rank},")
-    print(f"Reconstruction error = {recon_error}\n")
-    return
+# Example calls replacing the previous unit tests:
+print("Unit test 1 starts!")
+tucker_unit_test(
+    shape=[20, 30, 20],
+    rank=[15, 30, 18],
+    input_rank=[20, 40, 20],
+    cutoff=1e-10,
+    seed_value=10
+)
 
-def unit_test_3():
-    # Test of a completely random tensor
-    print("Unit test 3 starts!")
-    start_t = tm.time()
-    shape = [50, 60, 100]  # Tensor shape n1 * n2 * n3
-    seed(20)  # Random seed
-    tensor = rand(shape[0], shape[1], shape[2])
-      
-    # Tucker decomposition
-    input_rank = [100, 100, 100]
-    cutoff = 1e-10
-    core, factor, output_rank = tucker_decomposition(tensor, input_rank, cutoff)
-    recon_error = recon_error_eval(core, factor, tensor)
-    
-    # Result display
-    end_t = tm.time()
-    print(f"Unit test 3 ends! It took {end_t - start_t} seconds")
-    print(f"Tensor shape = {shape},\nTucker factor rank = {output_rank},")
-    print(f"Reconstruction error = {recon_error}\n")
-    return
+print("Unit test 2 starts!")
+tucker_unit_test(
+    shape=[20, 50, 10, 30],
+    rank=[15, 30, 7, 25],
+    input_rank=[50, 50, 50, 50],
+    cutoff=1e-10,
+    seed_value=20
+)
 
-unit_test_1()
-unit_test_2()
-unit_test_3()
+print("Unit test 3 starts!")
+tucker_unit_test(
+    shape=[50, 60, 100],
+    rank=None,  # Not used for random tensor
+    input_rank=[100, 100, 100],
+    cutoff=1e-10,
+    seed_value=20,
+    random_tensor=True
+)
 
