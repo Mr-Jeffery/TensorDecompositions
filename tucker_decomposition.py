@@ -108,8 +108,7 @@ def tucker_unit_test(
     start_t = tm.time()
 
     if not gen_rank:
-        if seed_value is not None:
-            seed(seed_value)
+        seed(seed_value)
         tensor = rand(*shape)
     else:
         tucker_factor = random_tucker(shape, gen_rank, random_state=seed_value)
@@ -153,5 +152,6 @@ tucker_unit_test(
     input_rank=[100, 100, 100],
     tol=1e-12,
     seed_value=20,
+    cutoff=1e-12,
 )
 

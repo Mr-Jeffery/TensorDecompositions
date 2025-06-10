@@ -65,14 +65,13 @@ def cp_unit_test(
     gen_rank: Optional[int] = None,
     tol: float = 1e-10,
     seed_value : int = 0, 
-    random_tensor: bool = False
 )-> None:
     print(f"CP decomposition starts with input:")
-    print(f"Shape = {shape}, Seed value = {seed_value}, {f"Generation Rank = {gen_rank}" if gen_rank is not None else ""}, Input rank = {input_rank}, Random tensor = {random_tensor}")
+    print(f"Shape = {shape}, Input rank = {input_rank}, Generation Rank = {gen_rank}, Tolerance = {tol}, Seed value = {seed_value}\n")
 
     start_t = tm.time()
 
-    if random_tensor or gen_rank is None:
+    if gen_rank is None:
         seed(seed_value)
         tensor = rand(*shape)
     else:
@@ -101,7 +100,6 @@ cp_unit_test(
     input_rank=200,
     gen_rank=200,
     tol=1e-12,
-    random_tensor=False
 )
 
 print("Unit test 2 starts!")
@@ -109,6 +107,5 @@ cp_unit_test(
     shape=[20, 30, 20, 10], 
     seed_value=10, 
     input_rank=300,
-    random_tensor=True
 )
 
