@@ -8,6 +8,9 @@ from scipy.linalg import svd
 from tensorly.random import random_tucker
 from tensorly.tenalg import mode_dot # type: ignore
 from tensorly.tucker_tensor import tucker_to_tensor
+from tensorly.decomposition import tucker as tucker_decomposition_tl
+
+from typing import Optional, List
 
 '''
 Tucker Tensor Decomposition
@@ -70,39 +73,55 @@ def tucker_decomposition(
 
     return core, factor, output_rank
 
+
 def tucker_unit_test(
     shape: list[int],
-    rank: list[int] | None,
     input_rank: list[int],
-    cutoff: float,
+    gen_rank: Optional[List[int]] = None,
+    cutoff: Optional[float] = None,
+    tol: float = 1e-10,
+    n_iter_max: int = 1000,
     seed_value: int = 0,
-    random_tensor: bool = False
 ) -> None:
     """
-    Generalized unit test for Tucker decomposition.
+    Generalized unit test for Tucker decomposition. Two modes of tensor generation:
+    1. Synthetic Tucker tensor with specified shape and rank.
+    2. Random tensor with specified shape.
+    Two modes of decomposition:
+    1. SVD-based Tucker decomposition with a cutoff for singular values.
+    2. TensorLy-based Tucker decomposition with a tolerance for convergence.
 
     Args:
         shape: Shape of the tensor.
-        rank: Tucker rank for generating synthetic tensor.
         input_rank: Input rank for decomposition.
-        cutoff: Singular value cutoff.
-        random_state: Random seed.
+        gen_rank: Tucker rank for generating synthetic tensor.
+        cutoff: Cutoff for singular values in Tucker decomposition, used in cut-off mode only.
+        tol: the algorithm stops when the variation in the reconstruction error is less than the tolerance, 
+              used in TensorLy mode only.
+        n_iter_max: Maximum number of iterations for convergence, used in TensorLy mode only.
+        seed_value: Seed value for random number generation.
         random_tensor: If True, generate a random tensor instead of a synthetic Tucker tensor.
     """
     print("Tucker unit test starts with input:")
-    print(f"Shape = {shape}, Rank = {rank}, Input rank = {input_rank}, Cutoff = {cutoff}, Seed value = {seed_value}, Random tensor = {random_tensor}")
+    print(f"Shape = {shape}, Input rank = {input_rank}, Generation Rank = {gen_rank}, Cutoff = {cutoff}, "
+          f"Tolerance = {tol}, Seed value = {seed_value}")
     start_t = tm.time()
 
-    if random_tensor:
+    if not gen_rank:
         if seed_value is not None:
             seed(seed_value)
         tensor = rand(*shape)
     else:
-        tucker_factor = random_tucker(shape, rank, random_state=seed_value)
+        tucker_factor = random_tucker(shape, gen_rank, random_state=seed_value)
         tensor = tucker_to_tensor(tucker_factor)
 
-    core, factor, output_rank = tucker_decomposition(tensor, input_rank, cutoff)
-    recon_error = recon_error_eval(core, factor, tensor)
+    if cutoff :
+        core, factor, output_rank = tucker_decomposition(tensor, input_rank, cutoff)
+        recon_error = recon_error_eval(core, factor, tensor)
+    else:
+        output_tucker, recon_error = tucker_decomposition_tl(tensor=tensor, rank=input_rank, tol=tol,n_iter_max=n_iter_max,return_errors=True)
+        recon_error = recon_error[-1]  # Get the last error value
+        output_rank = output_tucker.rank
 
     end_t = tm.time()
     print(f"Tucker unit test ends! It took {end_t - start_t} seconds")
@@ -114,28 +133,25 @@ def tucker_unit_test(
 print("Unit test 1 starts!")
 tucker_unit_test(
     shape=[20, 30, 20],
-    rank=[15, 30, 18],
-    input_rank=[20, 40, 20],
-    cutoff=1e-10,
-    seed_value=10
+    gen_rank=[15, 30, 18],
+    input_rank=[15, 30, 18],
 )
 
 print("Unit test 2 starts!")
 tucker_unit_test(
     shape=[20, 50, 10, 30],
-    rank=[15, 30, 7, 25],
+    gen_rank=[15, 30, 7, 25],
     input_rank=[50, 50, 50, 50],
-    cutoff=1e-10,
-    seed_value=20
+    seed_value=20,
+    cutoff=1e-12,
 )
 
+# Test of a completely random tensor
 print("Unit test 3 starts!")
 tucker_unit_test(
     shape=[50, 60, 100],
-    rank=None,  # Not used for random tensor
     input_rank=[100, 100, 100],
-    cutoff=1e-10,
+    tol=1e-12,
     seed_value=20,
-    random_tensor=True
 )
 

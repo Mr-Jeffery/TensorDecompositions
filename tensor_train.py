@@ -7,6 +7,7 @@ from numpy.random import seed
 from numpy.linalg import svd
 from tensorly.random import random_tt
 from tensorly.tt_tensor import tt_to_tensor
+from tensorly.decomposition import tensor_train as tt_decomposition
 
 '''
 Tensor Train (TT) Decomposition
@@ -100,14 +101,16 @@ def tensor_train_unit_test(
     if random_tensor:
         seed(seed_val)
         tensor = rand(*shape)
-        tensor_tl = tl.tensor(tensor)
+        tensor = tl.tensor(tensor)
     else:
         synthetic_tt = random_tt(shape, rank, random_state=seed_val)
-        tensor_tl = tt_to_tensor(synthetic_tt)
+        tensor = tt_to_tensor(synthetic_tt)
 
-    tensor_tl = np.asarray(tensor_tl)  # Ensure ndarray
-    tt_factor = tensor_train_decomposition(tensor_tl, r_max, cutoff)
-    recon_error = recon_error_eval(tt_factor, tensor_tl)
+    tt_factor = tensor_train_decomposition(tensor, r_max, cutoff)
+    # Ensure tensor is a NumPy ndarray before passing to recon_error_eval
+    if not isinstance(tensor, np.ndarray):
+        tensor = np.array(tensor)
+    recon_error = recon_error_eval(tt_factor, tensor)
     tt_rank = [fac.shape[2] for fac in tt_factor[:-1]]
 
     end_t = tm.time()

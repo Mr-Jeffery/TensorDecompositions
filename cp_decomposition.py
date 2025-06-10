@@ -4,7 +4,10 @@ import tensorly as tl
 
 from numpy.random import rand
 from numpy.random import seed
-from tensorly.decomposition import parafac
+from tensorly.random import random_cp
+from tensorly.cp_tensor import cp_to_tensor
+from tensorly.decomposition import parafac as cp_decomposition
+from typing import Optional
 
 '''
 One of the greatest features of tensors is that they can be represented 
@@ -42,7 +45,7 @@ def work_example() -> None:
     
     # CP decomposition. Input: tensor, rank 
     # ( A rank-r CP decomposes a tensor into a linear combination of r rank-1 tensors )
-    cp_result = parafac(tensor, rank=2)
+    cp_result = cp_decomposition(tensor, rank=2)
     
     print(f"number of factors (matrices) = {len(cp_result.factors)}")
     print(f"Shape of factors: {[f.shape for f in cp_result.factors]}")
@@ -58,28 +61,33 @@ def work_example() -> None:
 
 def cp_unit_test(
     shape: list[int], 
-    seed_value : int, 
-    rank: int
+    input_rank: int,
+    gen_rank: Optional[int] = None,
+    tol: float = 1e-10,
+    seed_value : int = 0, 
+    random_tensor: bool = False
 )-> None:
     print(f"CP decomposition starts with input:")
-    print(f"Shape = {shape}, Seed value = {seed_value}, Rank = {rank}")
-    start_t = tm.time()
-    seed(seed_value)  # Set random seed
-    tensor = rand(*shape)
-    
-    cp_result = parafac(tensor, rank)
-    
-    # Reconstruct CP factor to tensor
-    recon_tensor = tl.cp_to_tensor(cp_result)
+    print(f"Shape = {shape}, Seed value = {seed_value}, {f"Generation Rank = {gen_rank}" if gen_rank is not None else ""}, Input rank = {input_rank}, Random tensor = {random_tensor}")
 
-    # Evaluate the reconstruction error 
-    error = tl.norm(recon_tensor - tensor) / tl.norm(tensor) 
+    start_t = tm.time()
+
+    if random_tensor or gen_rank is None:
+        seed(seed_value)
+        tensor = rand(*shape)
+    else:
+        cp_factor = random_cp(shape, rank=gen_rank, random_state=seed_value)
+        tensor = cp_to_tensor(cp_factor)
+    
+    cp_result = cp_decomposition(tensor=tensor, rank=input_rank, tol=tol, return_errors=True)
+    assert isinstance(cp_result, tuple), "The output should be a tuple containing the CP decomposition and reconstruction error."
+    output_cp, recon_error = cp_result
     
     end_t = tm.time()
     print(f"CP unit test ends! It took {end_t - start_t} seconds")
-    print(f"number of factors (matrices) = {len(cp_result.factors)}")
-    print(f"Shape of factors: {[f.shape for f in cp_result.factors]}")
-    print(f"Reconstruction error = {error}")
+    print(f"number of factors (matrices) = {len(output_cp.factors)}")
+    print(f"Shape of factors: {output_cp.shape}")
+    print(f"Reconstruction error = {recon_error[-1]}\n")
     return
 
 
@@ -90,13 +98,17 @@ print("Unit test 1 starts!")
 cp_unit_test(
     shape=[20, 10, 30], 
     seed_value=20, 
-    rank=200
+    input_rank=200,
+    gen_rank=200,
+    tol=1e-12,
+    random_tensor=False
 )
 
 print("Unit test 2 starts!")
 cp_unit_test(
     shape=[20, 30, 20, 10], 
     seed_value=10, 
-    rank=300
+    input_rank=300,
+    random_tensor=True
 )
 
